@@ -1,0 +1,59 @@
+We are building a sync service which sync records from internal to external systems (could be more than 1)
+
+The problem today we are solving is:
+
+Schema transformation , Sync to External Service/s with Rate limits
+
+Assumptions:
+
+1. DB exists and all changes are streamed through a stream like kafka, kinesis
+
+2. External system is up and running and has valid api endpoint
+
+Approach Explanation:
+
+We are building a sync service which consumes stream of events from internal db called 'contacts'
+
+Now this table have a specific internal schema and we get the same from the stream
+
+There is column called type of contact which will be part of each contact record, this will help us to identify which external system we need to sync to
+
+Now based on the type of contact we do schema transformation
+
+
+Design Decisions:
+
+1. Internal DB updates:
+
+Streaming vs Polling
+
+We could have polled for all latest contact updates done in certain timeframe but that requires our sync service
+
+to keep polling at certain interval even though there may not be updates , also when large changes are done our internal 
+
+may not be sufficient. Streaming these updates would be in async in nature without impacting db performace or unnecessary
+
+api calls.
+
+2. Schema Transformation:
+
+Pydantic Based Models vs Config driven Mapping 
+
+Static mapping is simple and easy to maintain, good for standard mappings
+
+Pydatic models - Strong typing, validation, good for custom business logic
+
+3. API Dispatcher
+
+retry logic : Exponential Backoff vs Jitter vs Token Bucket Algorithm
+
+Jitter : Add randomness to the delay 
+
+Exponential Backoff: Start with a short delay, double it with each retry attempt
+
+Token Bucket Algorithm: This requires understanding of server limits but implements more sophsticated solution 
+preventing client making db calls
+
+4. Mutiple External system
+
+Strategy Pattern vs 

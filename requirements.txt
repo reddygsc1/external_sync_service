@@ -1,0 +1,19 @@
+# Core dependencies
+asyncio
+dataclasses
+typing
+
+# Logging and utilities
+logging
+
+# JSON handling
+json
+
+# Random number generation
+random
+
+# Date/time handling
+datetime
+
+# Note: Most dependencies are part of Python standard library
+# No external packages required for basic functionality 
