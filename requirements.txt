@@ -15,5 +15,6 @@ random
 # Date/time handling
 datetime
 
+black
 # Note: Most dependencies are part of Python standard library
 # No external packages required for basic functionality 

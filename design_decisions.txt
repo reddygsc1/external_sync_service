@@ -1,59 +1,99 @@
-We are building a sync service which sync records from internal to external systems (could be more than 1)
+## Problem Statement
 
-The problem today we are solving is:
+We're building a sync service that synchronizes records from internal systems to external systems (potentially multiple). The core challenges we're solving are:
 
-Schema transformation , Sync to External Service/s with Rate limits
+- Schema transformation between different data formats
+- Synchronization to external services with rate limiting
+- Handling multiple external systems efficiently
 
-Assumptions:
+## Key Assumptions
 
-1. DB exists and all changes are streamed through a stream like kafka, kinesis
+1. Database exists and all changes are streamed through a system like Kafka or Kinesis
+2. External systems are operational with valid API endpoints
+3. Currently dealting with one record type called 'Contact'
+3. Internal 'Contact' data has a type field that determines routing
 
-2. External system is up and running and has valid api endpoint
+## Architecture Overview
 
-Approach Explanation:
+The service consumes a stream of contact events from an internal database. Each contact record includes a type field that determines which external system receives the data. Based on this type, we perform schema transformation and route to the appropriate external system.
 
-We are building a sync service which consumes stream of events from internal db called 'contacts'
+## Core Design Decisions
 
-Now this table have a specific internal schema and we get the same from the stream
+### 1. Internal Database Updates: Streaming vs Polling
 
-There is column called type of contact which will be part of each contact record, this will help us to identify which external system we need to sync to
+Choice: Streaming updates
+Why: Polling would require constant API calls even when no updates exist, and could overwhelm the database during large change periods. Streaming provides async processing without impacting database performance.
 
-Now based on the type of contact we do schema transformation
+### 2. Schema Transformation: Pydantic Models vs Config-Driven Mapping
+
+Choice: Pydantic-based models
+Why: While static mapping is simpler, Pydantic provides strong typing, validation, and better support for custom business logic.
+
+### 3. API Dispatcher Retry Logic
+
+Choice: Exponential backoff with jitter
+Why: Jitter adds randomness to prevent thundering herd problems
+
+### 4. Multiple External System Strategy
+
+Choice: Adapter pattern with routing
+Why: Provides consistent interfaces while allowing system-specific optimizations and easy addition of new external systems.
+
+### 5. Hardcoded vs External Configuration
+
+Choice: External Configuration
+Why External Config is Better: Environment flexibility, runtime changes, security, maintenance
+
+### 6. Synchronous vs Async Processing
+
+Choice: Async Processing
+Why Async is Better: Resource efficiency, simpler code, better performance for I/O-bound tasks
+
+### 7. Direct Instantiation vs Factory Pattern
+
+Choice:: Factory Pattern
+Why Factory Pattern is Better: Preset configurations, easier testing, deployment flexibility
 
 
-Design Decisions:
+## Detailed Architecture Choices
 
-1. Internal DB updates:
+### Pipeline Architecture
+- Multi-stage pipeline with queues between stages
+- Decoupled processing with buffering and parallel execution
+- Three queues: raw events → processed events → transformed data -> api dispatcher
 
-Streaming vs Polling
+### Service Separation
+- MockStreamGenerator: Event generation for testing
+- InternalEventConsumer: Event processing and filtering
+- SchemaTransformer: Data transformation between schemas
+- APIDispatcherService: External API communication
 
-We could have polled for all latest contact updates done in certain timeframe but that requires our sync service
+### Async/Concurrent Design
+- Full async implementation using asyncio
+- Non-blocking I/O for external API calls
+- High throughput with separate tasks for each pipeline stage
 
-to keep polling at certain interval even though there may not be updates , also when large changes are done our internal 
+### Data Models & Validation
+- Pydantic models for all data structures
+- Runtime validation and automatic serialization
+- Event-driven architecture with audit trail and replay capability
 
-may not be sufficient. Streaming these updates would be in async in nature without impacting db performace or unnecessary
+### External System Integration
+- Adapter pattern for each external system (Salesforce, HubSpot)
+- Routing by contact type: Leads/Prospects → Salesforce, Customers/Vendors → HubSpot
+- Consistent interface across all external systems
 
-api calls.
+### Error Handling & Resilience
+- Graceful degradation: Continue processing even if some events fail
+- Configurable retries for external API calls
+- Comprehensive error logging and queue-based buffering
 
-2. Schema Transformation:
+### Configuration & Flexibility
+- Factory pattern for different pipeline configurations
+- Externalized configuration for all components
+- Preset configurations for testing and different deployment scenarios
 
-Pydantic Based Models vs Config driven Mapping 
-
-Static mapping is simple and easy to maintain, good for standard mappings
-
-Pydatic models - Strong typing, validation, good for custom business logic
-
-3. API Dispatcher
-
-retry logic : Exponential Backoff vs Jitter vs Token Bucket Algorithm
-
-Jitter : Add randomness to the delay 
-
-Exponential Backoff: Start with a short delay, double it with each retry attempt
-
-Token Bucket Algorithm: This requires understanding of server limits but implements more sophsticated solution 
-preventing client making db calls
-
-4. Mutiple External system
-
-Strategy Pattern vs 
+### Performance & Scalability
+- Queue-based buffering between pipeline stages
+- Batch processing for efficiency
+- Backpressure handling and smooth data flow
