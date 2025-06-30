@@ -3,7 +3,10 @@ from typing import Dict, Any, Optional, List, Union
 
 from app.adapters import SalesforceAdapter, HubSpotAdapter, BaseAdapter
 from app.models.internal_schema import InternalContact
-from app.utils.external_config import get_contact_type_routing, get_external_system
+from app.utils.external_routing_config import (
+    get_contact_type_routing,
+    get_external_system,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -108,32 +111,6 @@ class AdapterManager:
             for adapter_name, adapter in self.adapters.items()
         }
 
-    def get_routing_configuration(self) -> Dict[str, Any]:
-        """Get current routing configuration"""
-        return {
-            "contact_type_routing": self.contact_type_routing,
-            "adapters": list(self.adapters.keys()),
-            "supported_contact_types": self.get_all_supported_contact_types(),
-        }
-
-    def update_routing_configuration(self, new_routing: Dict[str, str]):
-        """Update contact type routing configuration"""
-        self.contact_type_routing.update(new_routing)
-        logger.info(f"Updated routing configuration: {self.contact_type_routing}")
-
-    def add_adapter(self, name: str, adapter: BaseAdapter):
-        """Add a new adapter"""
-        self.adapters[name] = adapter
-        logger.info(f"Added adapter '{name}': {adapter.__class__.__name__}")
-
-    def remove_adapter(self, name: str):
-        """Remove an adapter"""
-        if name in self.adapters:
-            del self.adapters[name]
-            logger.info(f"Removed adapter '{name}'")
-        else:
-            logger.warning(f"Adapter '{name}' not found for removal")
-
 
 class AdapterManagerFactory:
     """Factory for creating adapter managers with different configurations"""
@@ -146,4 +123,4 @@ class AdapterManagerFactory:
     @staticmethod
     def create_with_config(config: Dict[str, Any]) -> AdapterManager:
         """Create adapter manager with custom configuration"""
-        return AdapterManager(config) 
+        return AdapterManager(config)

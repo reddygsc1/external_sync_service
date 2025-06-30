@@ -43,7 +43,9 @@ class InternalEventConsumer(EventConsumerService):
         self.is_processing = False
 
         # Initialize schema transformer with configuration
-        self.schema_transformer = SchemaTransformerFactory.create_with_config(transformer_config or {})
+        self.schema_transformer = SchemaTransformerFactory.create_with_config(
+            transformer_config or {}
+        )
 
     async def consume_event(self, event: Dict[str, Any]) -> bool:
         """Process a single contact event with schema transformation"""
@@ -168,92 +170,3 @@ class InternalEventConsumer(EventConsumerService):
                 return False
 
         return True
-
-    def get_stats(self) -> Dict[str, Any]:
-        """Get processing statistics"""
-        return {
-            "total_processed": len(self.processed_events),
-            "event_counters": self.event_counters,
-            "contact_type_counters": self.contact_type_counters,
-            "external_system_counters": self.external_system_counters,
-            "transformation_errors": self.transformation_errors,
-            "is_processing": self.is_processing,
-            "last_processed": (
-                self.processed_events[-1]["received_at"]
-                if self.processed_events
-                else None
-            ),
-        }
-
-    def get_recent_events(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get recent processed events"""
-        return self.processed_events[-limit:] if self.processed_events else []
-
-    def get_transformation_summary(self) -> Dict[str, Any]:
-        """Get schema transformation summary"""
-        if not self.processed_events:
-            return {"message": "No events processed yet"}
-
-        total_events = len(self.processed_events)
-        successful_transformations = sum(
-            1 for event in self.processed_events if event.get("transformation_success")
-        )
-        failed_transformations = total_events - successful_transformations
-
-        return {
-            "total_events": total_events,
-            "successful_transformations": successful_transformations,
-            "failed_transformations": failed_transformations,
-            "success_rate": (
-                (successful_transformations / total_events * 100)
-                if total_events > 0
-                else 0
-            ),
-            "external_system_distribution": self.external_system_counters,
-            "contact_type_distribution": self.contact_type_counters,
-        }
-
-    def get_routing_configuration(self) -> Dict[str, Any]:
-        """Get current routing configuration"""
-        return self.schema_transformer.get_routing_configuration()
-
-    def update_routing_configuration(self, new_routing: Dict[str, str]):
-        """Update routing configuration"""
-        self.schema_transformer.update_routing_configuration(new_routing)
-
-    def clear_events(self):
-        """Clear processed events (useful for testing)"""
-        self.processed_events.clear()
-        self.event_counters = {k: 0 for k in self.event_counters}
-        self.contact_type_counters = {k: 0 for k in self.contact_type_counters}
-        self.external_system_counters = {k: 0 for k in self.external_system_counters}
-        self.transformation_errors = 0
-        logger.info("Cleared all processed events and counters")
-
-
-class MockEventConsumer(EventConsumerService):
-    """Mock event consumer for testing - just logs events"""
-
-    def __init__(self):
-        self.received_events = []
-
-    async def consume_event(self, event: Dict[str, Any]) -> bool:
-        """Mock event consumption - just log and store"""
-        self.received_events.append(
-            {"received_at": datetime.now().isoformat(), "event": event}
-        )
-
-        logger.info(
-            f"Mock consumer received: {event['operation']} event for {event['item']['id']}"
-        )
-        return True
-
-    async def consume_batch(self, events: List[Dict[str, Any]]) -> bool:
-        """Mock batch consumption"""
-        for event in events:
-            await self.consume_event(event)
-        return True
-
-    def get_received_events(self) -> List[Dict[str, Any]]:
-        """Get all received events"""
-        return self.received_events

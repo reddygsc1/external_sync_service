@@ -1,6 +1,6 @@
 import asyncio
 import random
-from app.utils.external_config import ExternalSystem
+from app.utils.external_routing_config import ExternalSystem
 import httpx
 import json
 from typing import Dict, Any
@@ -28,8 +28,10 @@ class APIDispatcherService:
     ) -> Dict[str, Any]:
         """Dispatch already-transformed contact data to external API"""
         if "_metadata" not in transformed_data:
-            raise ValueError("Transformed data must contain _metadata with external_system")
-        
+            raise ValueError(
+                "Transformed data must contain _metadata with external_system"
+            )
+
         external_system = transformed_data["_metadata"]["external_system"]
         url = self.endpoints[ExternalSystem(external_system)]
 

@@ -140,15 +140,7 @@ class MockStreamGenerator:
 
         self.email_domains = [
             "gmail.com",
-            "yahoo.com",
-            "hotmail.com",
             "outlook.com",
-            "company.com",
-            "business.org",
-            "enterprise.net",
-            "corp.io",
-            "startup.co",
-            "tech.dev",
         ]
 
         self.phone_formats = [
@@ -322,16 +314,3 @@ class MockStreamGenerator:
         """Stop the event streaming"""
         self.is_running = False
         logger.info("Mock stream generator stopped")
-
-    def get_stats(self) -> Dict[str, Any]:
-        """Get current statistics"""
-        return {
-            "is_running": self.is_running,
-            "total_generated_ids": len(self.generated_ids),
-            "current_records": len(self.contact_records),
-            "settings": {
-                "events_per_second": self.settings.events_per_second,
-                "batch_size": self.settings.batch_size,
-                "enable_async": self.settings.enable_async,
-            },
-        }

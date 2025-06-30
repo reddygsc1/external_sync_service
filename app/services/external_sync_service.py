@@ -7,7 +7,6 @@ from .mock_stream_generator import MockStreamGenerator, SystemSettings
 from .schema_transformer import SchemaTransformerFactory
 from .api_dispatcher_service import APIDispatcherService
 from .event_consumer_service import InternalEventConsumer
-from app.models.internal_schema import InternalContact, InternalContactEvent
 
 logger = logging.getLogger(__name__)
 
@@ -21,24 +20,30 @@ class IntegratedPipelineService:
         transformer_config: Optional[Dict[str, Any]] = None,
         max_retries: int = 3,
         enable_api_calls: bool = True,
-        enable_mock_mode: bool = False,
     ):
         # Initialize components
         self.stream_settings = stream_settings or SystemSettings()
         self.transformer_config = transformer_config or {}
         self.max_retries = max_retries
         self.enable_api_calls = enable_api_calls
-        self.enable_mock_mode = enable_mock_mode
 
         # Create separate queues for each stage
-        self.raw_events_queue = asyncio.Queue()
-        self.processed_events_queue = asyncio.Queue()
-        self.transformed_events_queue = asyncio.Queue()
+        self.raw_events_queue = (
+            asyncio.Queue()
+        )  # Queue for raw events send to event consumer
+        self.processed_events_queue = (
+            asyncio.Queue()
+        )  # Queue for processed events send to schema transformer
+        self.transformed_events_queue = (
+            asyncio.Queue()
+        )  # Queue for transformed events send to api dispatcher
 
         # Initialize services
         self.stream_generator = MockStreamGenerator(self.stream_settings)
         self.event_consumer = InternalEventConsumer()
-        self.schema_transformer = SchemaTransformerFactory.create_with_config(self.transformer_config)
+        self.schema_transformer = SchemaTransformerFactory.create_with_config(
+            self.transformer_config
+        )
         self.api_dispatcher = APIDispatcherService(max_retries=self.max_retries)
 
         # Pipeline state
@@ -179,29 +184,14 @@ class IntegratedPipelineService:
                     except Exception as e:
                         logger.error(f"API dispatch error: {e}")
                 else:
-                    # Mock mode - just log
-                    external_system = transformed_data.get("_metadata", {}).get(
-                        "external_system", "unknown"
+                    logger.info(
+                        f"API calls are disabled, please check the configuration"
                     )
-                    logger.info(f"Mock mode: Would dispatch to {external_system}")
 
             except asyncio.TimeoutError:
                 continue
             except Exception as e:
                 logger.error(f"API dispatcher error: {e}")
-
-    def update_stream_settings(self, new_settings: SystemSettings):
-        """Update stream generator settings"""
-        self.stream_settings = new_settings
-        logger.info("Updated stream settings")
-
-    def update_transformer_config(self, new_config: Dict[str, Any]):
-        """Update schema transformer configuration"""
-        self.transformer_config = new_config
-        # Recreate transformer with new config
-        self.schema_transformer = SchemaTransformerFactory.create_with_config(self.transformer_config)
-        self.api_dispatcher = APIDispatcherService(max_retries=self.max_retries)
-        logger.info("Updated transformer configuration")
 
 
 class PipelineFactory:
@@ -210,7 +200,7 @@ class PipelineFactory:
     @staticmethod
     def create_default_pipeline() -> IntegratedPipelineService:
         """Create default pipeline with API calls enabled"""
-        return IntegratedPipelineService(enable_api_calls=True, enable_mock_mode=False)
+        return IntegratedPipelineService(enable_api_calls=True)
 
     @staticmethod
     def create_high_volume_pipeline() -> IntegratedPipelineService:
@@ -221,5 +211,5 @@ class PipelineFactory:
             contact_types=["customer", "lead", "prospect", "vendor", "partner"],
         )
         return IntegratedPipelineService(
-            stream_settings=settings, enable_api_calls=True, enable_mock_mode=False
+            stream_settings=settings, enable_api_calls=True
         )

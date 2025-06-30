@@ -1,6 +1,6 @@
 # External Sync Service
 
-A comprehensive system-to-system synchronization service that transforms and routes contact records from internal systems to external platforms with schema transformation, retry logic, and rate limiting.
+A comprehensive system-to-system synchronization service that transforms and routes contact records Currently Performs syncing froming internal systems to external platforms with schema transformation, retry logic, and rate limiting.
 
 ## Overview
 
@@ -20,7 +20,6 @@ Internal DB → Event Stream → Event Consumer → Schema Transformer → API D
 - **Adapter Pattern**: Consistent interface for multiple external systems
 - **Retry Logic**: Exponential backoff with jitter for external API calls
 - **Configuration Management**: Flexible routing and system settings
-- **Mock Mode**: Testing capabilities with simulated event streams
 
 ## Quick Start
 
@@ -47,22 +46,18 @@ pip install -r requirements.txt
 ### Running the Application
 
 ```bash
-# Start the main application
-python -m app.main
+# Terminal 1: Start mock external service
+uvicorn mock_external_api:app --reload --port 8000
 
+# Terminal 2: Start main application
+python -m app.main
+```
 # Run with custom configuration
 export EVENTS_PER_SECOND=10
 export BATCH_SIZE=5
 export ENABLE_ASYNC=true
 export LOG_LEVEL=INFO
 python -m app.main
-```
-
-### Demo Mode
-
-```bash
-# Run the demo to see the system in action
-python demo_mock_stream.py
 ```
 
 ### Mock External Service
@@ -80,25 +75,15 @@ This starts a local FastAPI server that simulates Salesforce and HubSpot APIs, a
 - **Salesforce API**: Simulates Salesforce REST API endpoints
 - **HubSpot API**: Simulates HubSpot API with properties structure
 - **Rate Limiting**: Configurable rate limits to test retry logic
-- **Error Simulation**: Random failures to test error handling
-- **Response Validation**: Validates incoming data format
 
 **Default Configuration:**
 - **Port**: 8000
 - **Salesforce Endpoint**: `http://localhost:8000/salesforce`
 - **HubSpot Endpoint**: `http://localhost:8000/hubspot`
-- **Rate Limit**: 10 requests per minute per system
+- **Rate Limit**: 5 requests per second per system
 
-**Testing with Mock Service:**
-```bash
-# Terminal 1: Start mock external service
-uvicorn mock_external_api:app --reload --port 8000
 
-# Terminal 2: Start main application
-python -m app.main
-```
 
-The main application will automatically connect to the mock service when `MOCK_MODE=true` (default).
 
 ## Configuration
 
@@ -118,9 +103,7 @@ The main application will automatically connect to the mock service when `MOCK_M
 - **Salesforce**: lead, prospect, employee
 - **HubSpot**: customer, partner, vendor
 
-**Custom Routing:**
-```python
-from app.utils.external_config import update_routing_config
+
 
 # Salesforce-only configuration
 update_routing_config({
@@ -233,22 +216,7 @@ update_routing_config({
     "lead": "salesforce",
     "customer": "hubspot"
 })
-```
 
-## Development
-
-### Running Tests
-
-```bash
-# Run demo
-python demo_mock_stream.py
-
-# Run main application
-python -m app.main
-
-# Run with specific configuration
-python -m app.main --config test_config.json
-```
 
 ### Adding New External Systems
 

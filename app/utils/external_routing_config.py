@@ -27,11 +27,13 @@ def get_contact_type_routing(config: Dict[str, Any] = None) -> Dict[str, str]:
     return {**DEFAULT_CONTACT_TYPE_ROUTING, **config_routing}
 
 
-def get_external_system(contact_type: str, routing_config: Dict[str, str] = None) -> ExternalSystem:
+def get_external_system(
+    contact_type: str, routing_config: Dict[str, str] = None
+) -> ExternalSystem:
     """Get external system enum based on contact type"""
     if routing_config is None:
         routing_config = DEFAULT_CONTACT_TYPE_ROUTING
-    
+
     adapter_name = routing_config.get(contact_type, "salesforce")
 
     # Map adapter name to ExternalSystem enum

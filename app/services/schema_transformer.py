@@ -20,7 +20,7 @@ class SchemaTransformer:
         # Ensure we have an InternalContact instance
         internal_contact = InternalContact(**internal_data)
         contact_type = internal_contact.contact
-        
+
         # Get appropriate adapter
         adapter = self.adapter_manager.get_adapter(contact_type)
 
@@ -28,7 +28,9 @@ class SchemaTransformer:
         external_data = adapter.transform_to_external(internal_contact)
 
         # Add system metadata
-        external_system = self.adapter_manager.get_external_system_for_contact_type(contact_type)
+        external_system = self.adapter_manager.get_external_system_for_contact_type(
+            contact_type
+        )
         external_data["_metadata"]["external_system"] = external_system.value
 
         return external_data
@@ -52,6 +54,7 @@ class SchemaTransformerFactory:
     def create_default() -> SchemaTransformer:
         """Create schema transformer with default adapter manager"""
         from app.services.adapter_manager import AdapterManagerFactory
+
         adapter_manager = AdapterManagerFactory.create_default()
         return SchemaTransformer(adapter_manager)
 
@@ -59,5 +62,6 @@ class SchemaTransformerFactory:
     def create_with_config(config: Dict[str, Any]) -> SchemaTransformer:
         """Create schema transformer with custom configuration"""
         from app.services.adapter_manager import AdapterManagerFactory
+
         adapter_manager = AdapterManagerFactory.create_with_config(config)
         return SchemaTransformer(adapter_manager)
