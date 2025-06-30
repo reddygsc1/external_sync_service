@@ -1,6 +1,6 @@
 # External Sync Service
 
-A comprehensive system-to-system synchronization service that transforms and routes contact records Currently Performs syncing froming internal systems to external platforms with schema transformation, retry logic, and rate limiting.
+A comprehensive system-to-system synchronization service that transforms and routes contact records Currently performs syncing from internal systems to external platforms with schema transformation, retry logic, and rate limiting.
 
 ## Overview
 
@@ -184,23 +184,6 @@ app/
 
 ## API Usage
 
-### Basic Service Usage
-
-```python
-from app.services.mock_stream_generator import MockStreamGenerator
-from app.services.event_consumer_service import InternalEventConsumer
-from app.services.schema_transformer import SchemaTransformer
-from app.services.api_dispatcher_service import APIDispatcherService
-
-# Create services
-consumer = InternalEventConsumer()
-transformer = SchemaTransformer()
-dispatcher = APIDispatcherService()
-
-# Generate and process events
-generator = MockStreamGenerator(consumer)
-await generator.start_streaming()
-```
 
 ### Configuration Management
 
